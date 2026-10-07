@@ -1,0 +1,47 @@
+<main class="container-fluid mt-4">
+    <div class="row mb-3">
+        <div class="col">
+            <h2 class="fw-bold text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i> SLA Breaches</h2>
+            <p class="text-muted">Tickets unresolved 24+ hours after creation.</p>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-outline-secondary" (click)="loadReports()">Refresh Data</button>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-danger">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Ticket ID</th>
+                            <th>Current Status</th>
+                            <th>Technician</th>
+                            <th>Created At</th>
+                            <th>Resolved At</th>
+                            <th>Breach Duration</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngIf="isLoading"><td colspan="6" class="text-center py-4"><div class="spinner-border text-primary" role="status"></div></td></tr>
+                        <tr *ngIf="error"><td colspan="6" class="text-center text-danger py-4">{{ error }}</td></tr>
+                        <tr *ngIf="!isLoading && !error && breaches.length === 0"><td colspan="6" class="text-center py-4 text-muted">No SLA breaches found. Excellent work!</td></tr>
+                        
+                        <tr *ngFor="let t of breaches">
+                            <td><strong><a [routerLink]="['/tickets', t.id]" class="text-decoration-none">#{{ t.id }}</a></strong></td>
+                            <td><span class="badge bg-secondary">{{ t.status.replace('_', ' ') }}</span></td>
+                            <td>
+                                <ng-container *ngIf="t.technician; else noTech">{{ t.technician.name }}</ng-container>
+                                <ng-template #noTech><span class="text-muted">Unassigned</span></ng-template>
+                            </td>
+                            <td>{{ t.createdAt | date:'short' }}</td>
+                            <td>Not yet resolved</td>
+                            <td><span class="text-danger fw-bold">{{ getBreachDuration(t) }}</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</main>

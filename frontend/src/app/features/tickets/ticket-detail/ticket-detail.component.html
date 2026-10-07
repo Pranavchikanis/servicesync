@@ -1,0 +1,198 @@
+<main class="container-fluid mt-4" *ngIf="ticket">
+    <div class="row mb-3 align-items-center">
+        <div class="col">
+            <h2 class="fw-bold mb-0">Ticket #{{ ticket.id }}</h2>
+        </div>
+        <div class="col-auto">
+            <span class="badge fs-6" [ngClass]="getStatusBadge(ticket.status)">{{ ticket.status.replace('_', ' ') }}</span>
+            <a routerLink="/tickets" class="btn btn-outline-secondary ms-2">Back to Queue</a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Ticket Information -->
+        <div class="col-md-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white fw-bold">Customer & Device Info</div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-sm-3 text-muted fw-semibold">Customer</div>
+                        <div class="col-sm-9">{{ ticket.customerName }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-3 text-muted fw-semibold">Phone</div>
+                        <div class="col-sm-9">{{ ticket.customerPhone }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-3 text-muted fw-semibold">Device</div>
+                        <div class="col-sm-9">{{ ticket.deviceInfo }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-3 text-muted fw-semibold">Assigned Tech</div>
+                        <div class="col-sm-9">
+                            {{ ticket.technician ? ticket.technician.name : 'Unassigned' }}
+                            <button *ngIf="authService.hasRole('ADMIN')" class="btn btn-sm btn-link py-0" data-bs-toggle="modal" data-bs-target="#assignTechModal">Change</button>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-3 text-muted fw-semibold">Issue</div>
+                        <div class="col-sm-9">{{ ticket.issueDesc }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Parts Consumption -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-white fw-bold d-flex justify-content-between align-items-center">
+                    Parts & Materials
+                    <button *ngIf="authService.hasRole('TECH')" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#consumePartModal">Add Part</button>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Part / SKU</th>
+                                    <th>Qty</th>
+                                    <th>Unit Price</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngIf="!ticket.parts || ticket.parts.length === 0">
+                                    <td colspan="3" class="text-center py-3 text-muted">No parts consumed yet.</td>
+                                </tr>
+                                <tr *ngFor="let p of ticket.parts">
+                                    <td>{{ p.sku }} ({{ p.partName }})</td>
+                                    <td>{{ p.quantityUsed }}</td>
+                                    <td>${{ p.priceAtTime | number:'1.2-2' }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar / Actions / History -->
+        <div class="col-md-4">
+            <!-- Technician Actions -->
+            <div class="card shadow-sm mb-4" *ngIf="authService.hasRole('TECH')">
+                <div class="card-header bg-white fw-bold">Update Status</div>
+                <div class="card-body">
+                    <button class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#updateStatusModal">Change Ticket Status</button>
+                </div>
+            </div>
+
+            <!-- History Timeline -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-white fw-bold">Audit History</div>
+                <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                    <div class="timeline">
+                        <div class="timeline-item" *ngFor="let h of history">
+                            <div class="timeline-date">{{ h.changedAt | date:'short' }}</div>
+                            <div class="timeline-content">
+                                <strong>{{ h.changedByName }}</strong> changed status to 
+                                <span class="badge bg-secondary">{{ h.newStatus }}</span>
+                                <div *ngIf="h.notes" class="mt-2 text-muted fst-italic" style="font-size: 0.9em;">"{{ h.notes }}"</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Modals -->
+
+<!-- Update Status Modal -->
+<div class="modal fade" id="updateStatusModal" tabindex="-1" *ngIf="ticket">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold">Update Ticket Status</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form (ngSubmit)="updateStatus($event)">
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">New Status</label>
+                        <select class="form-select" name="newStatus" [(ngModel)]="newStatus">
+                            <option value="CREATED">Created</option>
+                            <option value="DIAGNOSING">Diagnosing</option>
+                            <option value="WAITING_PARTS">Waiting on Parts</option>
+                            <option value="RESOLVED">Resolved</option>
+                            <option value="CLOSED">Closed (Admin Only)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3" *ngIf="newStatus === 'RESOLVED' || newStatus === 'CLOSED'">
+                        <label class="form-label text-muted small fw-bold">Resolution Notes</label>
+                        <textarea class="form-control" rows="3" name="resolutionNotes" [(ngModel)]="resolutionNotes"></textarea>
+                    </div>
+                    <div class="text-end mt-4">
+                        <button type="button" class="btn btn-light me-2" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary px-4" data-bs-dismiss="modal">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Assign Tech Modal -->
+<div class="modal fade" id="assignTechModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold">Assign Technician</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form (ngSubmit)="assignTech($event)">
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">Select Technician</label>
+                        <select class="form-select" name="tech" [(ngModel)]="selectedTechId">
+                            <option value="">-- Select Technician --</option>
+                            <option *ngFor="let t of technicians" [value]="t.id">{{ t.name }}</option>
+                        </select>
+                    </div>
+                    <div class="text-end mt-4">
+                        <button type="button" class="btn btn-light me-2" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary px-4" data-bs-dismiss="modal">Assign</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Consume Part Modal -->
+<div class="modal fade" id="consumePartModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold">Consume Inventory Part</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form (ngSubmit)="consumePart($event)">
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">Select Part</label>
+                        <input class="form-control" list="inventory-list" name="part" [(ngModel)]="consumePartId" placeholder="Type to search..." autocomplete="off">
+                        <datalist id="inventory-list">
+                            <option *ngFor="let p of inventory" [value]="p.id + ' - ' + p.sku + ' - ' + p.partName"></option>
+                        </datalist>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">Quantity</label>
+                        <input type="number" class="form-control" name="qty" [(ngModel)]="consumeQty" min="1" required>
+                    </div>
+                    <div class="text-end mt-4">
+                        <button type="button" class="btn btn-light me-2" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary px-4" data-bs-dismiss="modal">Consume</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

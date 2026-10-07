@@ -1,0 +1,81 @@
+<main class="container-fluid mt-4">
+    <div class="row mb-3">
+        <div class="col">
+            <h2 class="fw-bold">Dashboard</h2>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-outline-secondary" (click)="loadDashboard()">Refresh</button>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm text-center border-warning border-top border-4">
+                <div class="card-body">
+                    <h5 class="text-muted mb-1">New & Unassigned</h5>
+                    <h2 class="fw-bold mb-0">{{ createdCount }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm text-center border-info border-top border-4">
+                <div class="card-body">
+                    <h5 class="text-muted mb-1">In Diagnosis</h5>
+                    <h2 class="fw-bold mb-0">{{ diagnosingCount }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm text-center border-danger border-top border-4">
+                <div class="card-body">
+                    <h5 class="text-muted mb-1">Waiting on Parts</h5>
+                    <h2 class="fw-bold mb-0">{{ waitingPartsCount }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    Priority Queue <span *ngIf="authService.hasRole('TECH') && !authService.hasRole('ADMIN')" class="badge bg-secondary ms-2">Assigned to Me</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Device</th>
+                                    <th>Status</th>
+                                    <th *ngIf="authService.hasRole('ADMIN')">Assigned Tech</th>
+                                    <th>Created</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngIf="isLoading"><td colspan="6" class="text-center py-4"><div class="spinner-border text-primary" role="status"></div></td></tr>
+                                <tr *ngIf="error"><td colspan="6" class="text-center text-danger py-4">{{ error }}</td></tr>
+                                <tr *ngIf="!isLoading && !error && tickets.length === 0"><td colspan="6" class="text-center py-4 text-muted">No active tickets found in queue.</td></tr>
+                                <tr *ngFor="let t of tickets">
+                                    <td><strong>#{{ t.id }}</strong></td>
+                                    <td>{{ t.deviceInfo }}</td>
+                                    <td><span class="badge" [ngClass]="getStatusBadge(t.status)">{{ t.status.replace('_', ' ') }}</span></td>
+                                    <td *ngIf="authService.hasRole('ADMIN')">
+                                        <ng-container *ngIf="t.technician; else noTech">{{ t.technician.name }}</ng-container>
+                                        <ng-template #noTech><span class="text-muted">Unassigned</span></ng-template>
+                                    </td>
+                                    <td>{{ t.createdAt | date:'shortDate' }}</td>
+                                    <td>
+                                        <a [routerLink]="['/tickets', t.id]" class="btn btn-sm btn-outline-primary">View</a>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>

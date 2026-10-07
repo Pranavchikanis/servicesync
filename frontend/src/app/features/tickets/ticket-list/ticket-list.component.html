@@ -1,0 +1,109 @@
+<main class="container-fluid mt-4">
+    <div class="row mb-3 align-items-center">
+        <div class="col">
+            <h2 class="fw-bold mb-0">Service Tickets</h2>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createTicketModal">
+                New Ticket
+            </button>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row mb-3">
+        <div class="col-md-3">
+            <select class="form-select" [ngModel]="statusFilter" (change)="onFilterChange($event)">
+                <option value="">All Statuses</option>
+                <option value="CREATED">Created</option>
+                <option value="DIAGNOSING">Diagnosing</option>
+                <option value="WAITING_PARTS">Waiting on Parts</option>
+                <option value="RESOLVED">Resolved</option>
+                <option value="CLOSED">Closed</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Customer</th>
+                            <th>Phone</th>
+                            <th>Device</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngIf="isLoading"><td colspan="7" class="text-center py-4"><div class="spinner-border text-primary" role="status"></div></td></tr>
+                        <tr *ngIf="error"><td colspan="7" class="text-center text-danger py-4">{{ error }}</td></tr>
+                        <tr *ngIf="!isLoading && !error && filteredTickets.length === 0"><td colspan="7" class="text-center py-4 text-muted">No tickets found.</td></tr>
+                        <tr *ngFor="let t of filteredTickets">
+                            <td><strong>#{{ t.id }}</strong></td>
+                            <td>{{ t.customerName }}</td>
+                            <td>{{ t.customerPhone }}</td>
+                            <td>{{ t.deviceInfo }}</td>
+                            <td><span class="badge" [ngClass]="getStatusBadge(t.status)">{{ t.status.replace('_', ' ') }}</span></td>
+                            <td>{{ t.createdAt | date:'shortDate' }}</td>
+                            <td>
+                                <a [routerLink]="['/tickets', t.id]" class="btn btn-sm btn-outline-primary">Details</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer bg-white d-flex justify-content-between align-items-center">
+            <span class="text-muted small" id="pagination-info">Page 1 of 1</span>
+            <div>
+                <button class="btn btn-sm btn-outline-secondary me-2" disabled>Previous</button>
+                <button class="btn btn-sm btn-outline-secondary" disabled>Next</button>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Create Ticket Modal -->
+<div class="modal fade" id="createTicketModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold">New Service Ticket</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form (ngSubmit)="createTicket($event)">
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">Customer Name</label>
+                        <input type="text" class="form-control" name="customerName" [(ngModel)]="newTicket.customerName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">Phone Number</label>
+                        <input type="tel" class="form-control" name="customerPhone" [(ngModel)]="newTicket.customerPhone" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">Device Info (Make/Model)</label>
+                        <input type="text" class="form-control" name="deviceInfo" [(ngModel)]="newTicket.deviceInfo" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">Issue Description</label>
+                        <textarea class="form-control" rows="3" name="issueDesc" [(ngModel)]="newTicket.issueDesc" required></textarea>
+                    </div>
+                    <div class="text-end mt-4">
+                        <button type="button" class="btn btn-light me-2" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary px-4" [disabled]="isCreating">
+                            <span *ngIf="isCreating" class="spinner-border spinner-border-sm me-2" role="status"></span>
+                            {{ isCreating ? 'Creating...' : 'Create Ticket' }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

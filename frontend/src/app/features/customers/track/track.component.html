@@ -1,0 +1,69 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+    <div class="container">
+        <a class="navbar-brand" href="#">ServiceSync</a>
+        <div class="d-flex">
+            <a routerLink="/login" class="btn btn-outline-light btn-sm">Staff Login</a>
+        </div>
+    </div>
+</nav>
+
+<main class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm border-0 fade-in mb-4" *ngIf="!result">
+                <div class="card-body p-4 p-md-5">
+                    <h3 class="text-center mb-4">Track Your Repair</h3>
+                    <p class="text-muted text-center mb-4">Enter your ticket ID and phone number to check the status of your repair.</p>
+                    
+                    <div *ngIf="error" class="alert alert-danger" role="alert">
+                        {{ error }}
+                    </div>
+
+                    <form (ngSubmit)="onSubmit($event)">
+                        <div class="mb-3">
+                            <label for="ticketId" class="form-label">Ticket ID</label>
+                            <input type="number" class="form-control" name="ticketId" [(ngModel)]="ticketId" required min="1">
+                        </div>
+                        <div class="mb-4">
+                            <label for="phoneNumber" class="form-label">Phone Number</label>
+                            <input type="text" class="form-control" name="phoneNumber" [(ngModel)]="phoneNumber" required placeholder="555-xxxx">
+                        </div>
+
+                        <button class="w-100 btn btn-lg btn-primary" type="submit" [disabled]="isLoading">
+                            <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2" role="status"></span>
+                            {{ isLoading ? 'Checking...' : 'Check Status' }}
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Result Card -->
+            <div class="card shadow-sm border-0 fade-in" *ngIf="result">
+                <div class="card-body p-4">
+                    <h5 class="card-title text-center mb-4">Repair Status</h5>
+                    
+                    <div class="mb-3">
+                        <small class="text-muted d-block">Device Information</small>
+                        <strong class="fs-5">{{ result.deviceInfo }}</strong>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <small class="text-muted d-block">Status</small>
+                        <span class="badge fs-6 mt-1" [ngClass]="getStatusBadge(result.status)">
+                            {{ result.status.replace('_', ' ') }}
+                        </span>
+                    </div>
+
+                    <div class="mb-3">
+                        <small class="text-muted d-block">Issue Description</small>
+                        <p class="mb-0 mt-1">{{ result.issueDesc }}</p>
+                    </div>
+
+                    <div class="text-center mt-4">
+                        <button class="btn btn-outline-secondary" (click)="searchAgain()">Search Another</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>

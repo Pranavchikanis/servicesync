@@ -1,0 +1,53 @@
+<main class="container-fluid mt-4">
+    <div class="row mb-3 align-items-center">
+        <div class="col">
+            <h2 class="fw-bold mb-0">Inventory Management</h2>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-primary">Add Part</button>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>SKU</th>
+                            <th>Part Name</th>
+                            <th>Stock</th>
+                            <th>Price</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngIf="isLoading"><td colspan="6" class="text-center py-4"><div class="spinner-border text-primary" role="status"></div></td></tr>
+                        <tr *ngIf="error"><td colspan="6" class="text-center text-danger py-4">{{ error }}</td></tr>
+                        <tr *ngIf="!isLoading && !error && inventory.length === 0"><td colspan="6" class="text-center py-4 text-muted">No inventory items found.</td></tr>
+                        <tr *ngFor="let item of inventory" [ngClass]="{'table-warning': item.quantityInStock <= 5}">
+                            <td><strong>#{{ item.id }}</strong></td>
+                            <td><code>{{ item.sku }}</code></td>
+                            <td>{{ item.partName }}</td>
+                            <td><strong [ngClass]="{'text-danger': item.quantityInStock <= 5}">{{ item.quantityInStock }}</strong></td>
+                            <td class="text-muted">${{ item.price | number:'1.2-2' }}</td>
+                            <td>
+                                <span *ngIf="item.quantityInStock <= 5" class="badge bg-danger">Low Stock</span>
+                                <span *ngIf="item.quantityInStock > 5" class="badge bg-success">In Stock</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer bg-white d-flex justify-content-between align-items-center">
+            <span class="text-muted small">Page 1 of 1</span>
+            <div>
+                <button class="btn btn-sm btn-outline-secondary me-2" disabled>Previous</button>
+                <button class="btn btn-sm btn-outline-secondary" disabled>Next</button>
+            </div>
+        </div>
+    </div>
+</main>
